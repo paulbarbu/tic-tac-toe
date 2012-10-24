@@ -2,65 +2,24 @@
 #include <string>
 #include <iostream>
 
-class IPlayer{
+class Board{
     public:
-        virtual void Move()=0;
-    protected:
-        //X or O
-        sf::Shape sign;
-};
-
-class Game{
-    public:
-        Game(unsigned int w, unsigned h, const std::string& t)
-            : window(sf::VideoMode(w, h, 32), t), input(window.GetInput()){
+        Board(unsigned int w, unsigned int h){
             width = w;
             height = h;
-            title = t;
         }
 
-        void Loop(){
-            while(window.IsOpened()){
-                while(window.GetEvent(event)){
-                    if(event.Type == sf::Event::Closed){
-                        window.Close();
-                    }
-                    else if(event.Type == sf::Event::MouseButtonReleased
-                            && event.MouseButton.Button == sf::Mouse::Left){
-                        std::cout<<CoordToCell(event.MouseButton.X, event.MouseButton.Y)<<"\n";
-                        //TODO: if my turn, paul.GetInput() (will use board.CoordToCell internally), isValidMove(), game.DrawMove(row, col) (by
-                        //ctor paul draws on an window), game.UpdateInternalBoard()
-                        //
-                        //AI will have an overloaded std::pair<int, int> ai.GetInput() (this is minimax), isValidMove(), game.DrawMove(), game.UpdateInternalBoard()
-                        //board + game => composition
-                        //board + player => aggregation
-                    }
-                }
-
-                window.Clear();
-
-                DrawGrid();
-
-                window.Display();
-            }
-        }
-
-    private:
         /**
          * Translate a point's coordinates on the 3x3 grid to a cell position
          *
          * @param unsigned int x the X axis coordinate of the point
          * @param unsigned int y the Y axis coordinate of the point
          *
-         * @return int the point's cell number
+         * @return std::pair<unsigned int, unsigned int> the point's row and
+         * column number on the board
          */
-        int CoordToCell(unsigned int x, unsigned int y){
+        std::pair<unsigned int, unsigned int> CoordToPos(unsigned int x, unsigned int y) const{
             int col, row;
-            int cells[3][3] = {
-                {1, 2, 3},
-                {4, 5, 6},
-                {7, 8, 9},
-            };
 
             for(int i=1; i<=3; i++){
                 //check the column clicked
@@ -74,10 +33,121 @@ class Game{
                 }
             }
 
-            //by combining the row and column we get the cell number
-            return cells[row-1][col-1];
+            return std::pair<unsigned int, unsigned int>(row, col);
         }
 
+        void Update(int id, unsigned int row, unsigned int col){
+        }
+
+        bool IsValidMove(unsigned int row, unsigned int col){
+            return true;//TODO
+        }
+
+        int GetWinner(){
+            return 0;//TODO
+        }
+
+        unsigned int GetWidth(){
+            return width;
+        }
+
+        unsigned int GetHeight(){
+            return height;
+        }
+
+    private:
+        unsigned int width, height;
+        int board[3][3];
+};
+
+class IPlayer{
+    public:
+        virtual std::pair<unsigned int, unsigned int> GetInput()=0;
+        virtual int GetId()=0;
+    protected:
+        //X or O
+        sf::Shape sign;
+        int id;
+};
+
+class HumanPlayer : public IPlayer{
+    public:
+        HumanPlayer(int i, const Board &b)
+            : id(i), board(b) {
+        }
+
+        std::pair<unsigned int, unsigned int> GetInput(){
+            // TODO: think of handling the human's input in separate classes
+            // so the implementation can be swappable
+            // //board will be used here to translate the coords
+            return std::pair<unsigned int, unsigned int>(0, 0);
+        }
+
+        int GetId(){
+            return id;
+        }
+
+    private:
+        const Board &board;
+        const int id;
+        sf::Shape sign;
+};
+
+class Game{
+    public:
+        Game(unsigned int w, unsigned h, const std::string& t)
+            : board(w, h), window(sf::VideoMode(w, h, 32), t), human(1, board){
+            title = t;
+        }
+
+        void DrawMove(unsigned int row, unsigned int col){
+            //TODO: use current_player to draw the shape
+        }
+
+        //TODO: if my turn, paul.GetInput() (will use board.CoordToCell internally), isValidMove(), game.DrawMove(row, col),
+        // game.UpdateInternalBoard()
+        //
+        //AI will have an overloaded std::pair<int, int> ai.GetInput() (this is minimax), isValidMove(), game.DrawMove(), game.UpdateInternalBoard()
+        //board + game => composition
+        //board + player => aggregation
+        void Loop(){
+            std::pair<unsigned int, unsigned int> pos;
+            current_player = &human;
+
+            while(window.IsOpened()){
+                while(window.GetEvent(event)){
+                    if(event.Type == sf::Event::Closed){
+                        window.Close();
+                    }
+                    else if(event.Type == sf::Event::MouseButtonReleased
+                            && event.MouseButton.Button == sf::Mouse::Left
+                            && current_player->GetId() == 1){ //human player
+                        pos = board.CoordToPos(event.MouseButton.X, event.MouseButton.Y);
+                        std::cout<<pos.first<<" "<<pos.second<<"\n";
+                    }
+                }
+
+                if(pos.first != 0 && pos.second != 0){
+                    if(board.IsValidMove(pos.first, pos.second)){
+                        DrawMove(pos.first, pos.second);
+                        board.Update(current_player->GetId(), pos.first, pos.second);
+
+                        //TODO: change current_player
+                    }
+                }
+
+                int winner_id = board.GetWinner();
+                //TODO: Check for game over
+
+                window.Clear();
+                DrawGrid();
+                window.Display();
+
+                pos = std::make_pair(0, 0);
+            }
+        }
+
+    private:
         /**
          * Split to window into 9 squares where the X-es or O-s will fit.
          *
@@ -87,23 +157,24 @@ class Game{
             sf::Shape line;
 
             for(int i=1; i<=2; i++){
-                line = sf::Shape::Line(width*(i/3.f), 0,
-                        width*(i/3.f), height,
+                line = sf::Shape::Line(board.GetWidth()*(i/3.f), 0,
+                        board.GetWidth()*(i/3.f), board.GetHeight(),
                         3, sf::Color(255, 255, 255));
                 window.Draw(line);
 
-                line = sf::Shape::Line(0, height*(i/3.f),
-                        height, height*(i/3.f),
+                line = sf::Shape::Line(0, board.GetHeight()*(i/3.f),
+                        board.GetHeight(), board.GetHeight()*(i/3.f),
                         3, sf::Color(255, 255, 255));
                 window.Draw(line);
             }
         }
 
+        Board board;
         std::string title;
-        unsigned int width, height;
         sf::RenderWindow window;
         sf::Event event;
-        const sf::Input &input;
+        IPlayer *current_player; //make this a reference to a player
+        HumanPlayer human;
 };
 
 int main(){
