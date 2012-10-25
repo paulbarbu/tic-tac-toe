@@ -137,7 +137,7 @@ class Player{
     public:
         Player(int i) : id(i) {}
 
-        virtual std::pair<unsigned int, unsigned int> GetInput()=0;
+        virtual std::pair<unsigned int, unsigned int> GetInput(sf::Event)=0;
 
         virtual int GetId(){
             return id;
@@ -145,19 +145,17 @@ class Player{
 
     protected:
         const int id;
-        //X or O
-        sf::Shape sign;
 };
 
 class HumanPlayer : public Player {
     public:
         HumanPlayer(int id, const sf::Input &i, const Board &b)
-            : Player(id), board(b), input(i) {}
+            : Player(id), board(b) {}
 
-        std::pair<unsigned int, unsigned int> GetInput(){
-            //TODO: ask about the continous click spray
-            if(input.IsMouseButtonDown(sf::Mouse::Left)){
-                return board.CoordToPos(input.GetMouseX(), input.GetMouseY());
+        std::pair<unsigned int, unsigned int> GetInput(sf::Event event){
+            if(event.Type == sf::Event::MouseButtonReleased
+                && event.MouseButton.Button == sf::Mouse::Left){
+                return board.CoordToPos(event.MouseButton.X, event.MouseButton.Y);
             }
 
             return std::make_pair(0, 0);
@@ -165,14 +163,13 @@ class HumanPlayer : public Player {
 
     private:
         const Board &board;
-        const sf::Input &input;
 };
 
 class AiPlayer : public Player{
     public:
         AiPlayer(int id) : Player(id) {}
 
-        std::pair<unsigned int, unsigned int> GetInput(){
+        std::pair<unsigned int, unsigned int> GetInput(sf::Event){
             int row = sf::Randomizer::Random(1, 3);
             int col = sf::Randomizer::Random(1, 3);
 
