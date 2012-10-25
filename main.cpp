@@ -156,10 +156,14 @@ class Game{
                     }
                     else if(event.Type == sf::Event::MouseButtonReleased
                             && event.MouseButton.Button == sf::Mouse::Left
-                            && current_player->GetId() == 1){ //human player
+                            && current_player == &human){ //human's turn
                         pos = board.CoordToPos(event.MouseButton.X, event.MouseButton.Y);
                         std::cout<<pos.first<<" "<<pos.second<<"\n";
                     }
+                }
+
+                if(current_player == &ai){//TODO: get rid of this after properly getting input
+                    pos = current_player->GetInput();
                 }
 
                 if(pos.first != 0 && pos.second != 0){
@@ -167,7 +171,19 @@ class Game{
                         DrawMove(pos.first, pos.second);
                         board.Update(current_player->GetId(), pos.first, pos.second);
 
-                        //TODO: change current_player
+                        std::cout<<"valid\n";
+
+                        if(current_player == &human){
+                            current_player = &ai;
+                            std::cout<<"AI's move!\n";
+                        }
+                        else{
+                            current_player = &human;
+                            std::cout<<"Your move!\n";
+                        }
+                    }
+                    else{
+                        std::cout<<"invalid\n";
                     }
                 }
 
