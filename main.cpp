@@ -60,48 +60,63 @@ class Board{
         int board[3][3];
 };
 
-class IPlayer{
+class Player{
     public:
+        Player(int i) : id(i) {}
+
         virtual std::pair<unsigned int, unsigned int> GetInput()=0;
-        virtual int GetId()=0;
+
+        virtual int GetId(){
+            return id;
+        }
+
     protected:
+        const int id;
         //X or O
         sf::Shape sign;
-        int id;
 };
 
-class HumanPlayer : public IPlayer{
+class HumanPlayer : public Player {
     public:
-        HumanPlayer(int i, const Board &b)
-            : id(i), board(b) {
-        }
+        HumanPlayer(int id, const sf::Input &i, const Board &b)
+            : Player(id), board(b), input(i) {}
 
         std::pair<unsigned int, unsigned int> GetInput(){
-            // TODO: think of handling the human's input in separate classes
-            // so the implementation can be swappable
-            // //board will be used here to translate the coords
-            return std::pair<unsigned int, unsigned int>(0, 0);
-        }
+            //TODO: ask about the continous click spray
+            if(input.IsMouseButtonDown(sf::Mouse::Left)){
+                return board.CoordToPos(input.GetMouseX(), input.GetMouseY());
+            }
 
-        int GetId(){
-            return id;
+            return std::make_pair(0, 0);
         }
 
     private:
         const Board &board;
-        const int id;
-        sf::Shape sign;
+        const sf::Input &input;
+};
+
+class AiPlayer : public Player{
+    public:
+        AiPlayer(int id) : Player(id) {}
+
+        std::pair<unsigned int, unsigned int> GetInput(){
+            int row = sf::Randomizer::Random(1, 3);
+            int col = sf::Randomizer::Random(1, 3);
+
+            return std::make_pair(row, col);
+        }
 };
 
 class Game{
     public:
         Game(unsigned int w, unsigned h, const std::string& t)
-            : board(w, h), window(sf::VideoMode(w, h, 32), t), human(1, board){
+            : board(w, h), window(sf::VideoMode(w, h, 32), t),
+            human(1, window.GetInput(), board), ai(2) {
             title = t;
         }
 
         void DrawMove(unsigned int row, unsigned int col){
-            //TODO: use current_player to draw the shape
+            //TODO: use current_player->Shape to draw the shape
         }
 
         //TODO: if my turn, paul.GetInput() (will use board.CoordToCell internally), isValidMove(), game.DrawMove(row, col),
@@ -173,8 +188,9 @@ class Game{
         std::string title;
         sf::RenderWindow window;
         sf::Event event;
-        IPlayer *current_player; //make this a reference to a player
+        Player *current_player;
         HumanPlayer human;
+        AiPlayer ai;
 };
 
 int main(){
