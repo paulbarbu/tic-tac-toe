@@ -186,63 +186,94 @@ class Game{
         }
 
         void DrawMove(unsigned int row, unsigned int col){
-            //TODO: use current_player->Shape to draw the shape
+            //TODO: add some randomness
+            //TODO: try and combine two shapes (for the X)
+            sf::Shape sign;
+            sign.EnableFill(false);
+
+            if(current_player == &human){
+                //the O
+                sign = sf::Shape::Circle(100*col - 50, 100*row - 50, 45,
+                        sf::Color(239, 39, 93), 5.f, sf::Color(239, 39, 93));
+            }
+            else{
+                //the X
+                sign = sf::Shape::Line(100 * (col-1), 100 * (row-1),
+                        100*col, 100*row, 5, sf::Color(39, 239, 184));
+                window.Draw(sign);
+
+                sign = sf::Shape::Line(100*col, 100 * (row-1),
+                        100 * (col-1), 100*row, 5, sf::Color(39, 239, 184));
+            }
+
+            window.Draw(sign);
         }
 
-        //TODO: if my turn, paul.GetInput() (will use board.CoordToCell internally), isValidMove(), game.DrawMove(row, col),
-        // game.UpdateInternalBoard()
-        //
-        //AI will have an overloaded std::pair<int, int> ai.GetInput() (this is minimax), isValidMove(), game.DrawMove(), game.UpdateInternalBoard()
-        //board + game => composition
-        //board + player => aggregation
         void Loop(){
             std::pair<unsigned int, unsigned int> pos;
             current_player = &human;
+
+            window.Clear();
+            DrawGrid();
 
             while(window.IsOpened()){
                 while(window.GetEvent(event)){
                     if(event.Type == sf::Event::Closed){
                         window.Close();
                     }
-                    else if(event.Type == sf::Event::MouseButtonReleased
-                            && event.MouseButton.Button == sf::Mouse::Left
-                            && current_player == &human){ //human's turn
-                        pos = board.CoordToPos(event.MouseButton.X, event.MouseButton.Y);
-                        std::cout<<pos.first<<" "<<pos.second<<"\n";
+                    else{
+                        pos = current_player->GetInput(event);
                     }
                 }
 
-                if(current_player == &ai){//TODO: get rid of this after properly getting input
-                    pos = current_player->GetInput();
-                }
-
-                if(pos.first != 0 && pos.second != 0){
-                    if(board.IsValidMove(pos.first, pos.second)){
+                if(board.IsValidMove(pos.first, pos.second)){
+                    if(board.Update(current_player->GetId(), pos.first, pos.second)){
                         DrawMove(pos.first, pos.second);
-                        board.Update(current_player->GetId(), pos.first, pos.second);
-
-                        std::cout<<"valid\n";
 
                         if(current_player == &human){
                             current_player = &ai;
-                            std::cout<<"AI's move!\n";
                         }
                         else{
                             current_player = &human;
-                            std::cout<<"Your move!\n";
                         }
-                    }
-                    else{
-                        std::cout<<"invalid\n";
                     }
                 }
 
-                int winner_id = board.GetWinner();
-                //TODO: Check for game over
-
-                window.Clear();
-                DrawGrid();
                 window.Display();
+
+                int winner_id = board.GetWinner();
+                if(winner_id == human.GetId()){
+                    std::cout<<"The human won!\n";
+
+                    for (int i = 0; i < 3; i++) {
+                        for (int j = 0; j < 3; j++) {
+                            std::cout<<board.board[i][j]<<" ";
+                        }
+                        std::cout<<"\n";
+                    }
+
+                    return;
+                }
+                else if(winner_id == ai.GetId()){
+                    std::cout<<"The computer won!\n";
+                    for (int i = 0; i < 3; i++) {
+                        for (int j = 0; j < 3; j++) {
+                            std::cout<<board.board[i][j]<<" ";
+                        }
+                        std::cout<<"\n";
+                    }
+                    return;
+                }
+                else if (winner_id < 0){
+                    std::cout<<"It's a draw!\n";
+                    for (int i = 0; i < 3; i++) {
+                        for (int j = 0; j < 3; j++) {
+                            std::cout<<board.board[i][j]<<" ";
+                        }
+                        std::cout<<"\n";
+                    }
+                    return;
+                }
 
                 pos = std::make_pair(0, 0);
             }
