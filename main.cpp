@@ -5,11 +5,11 @@
 
 class Board{
     public:
-        Board(unsigned int w, unsigned int h, int f=0)
-            : board(3, std::vector<int>(3, f)) {
+        Board(unsigned int w, unsigned int h, int e=0)
+            : board(3, std::vector<int>(3, e)) {
             width = w;
             height = h;
-            fill = f;
+            empty = e;
         }
 
         /**
@@ -40,9 +40,15 @@ class Board{
             return std::pair<unsigned int, unsigned int>(row, col);
         }
 
-        void Update(int id, unsigned int row, unsigned int col){
-            //Note: the vector is 0-indexed
-            board[row-1][col-1] = id;
+        bool Update(int id, unsigned int row, unsigned int col){
+            if(IsValidRowCol(row, col)){
+                //Note: the vector is 0-indexed
+                board[row-1][col-1] = id;
+
+                return true;
+            }
+
+            return false;
         }
 
         /**
@@ -55,7 +61,7 @@ class Board{
          */
         bool IsValidMove(unsigned int row, unsigned int col){
             //Note: the vector is 0-indexed
-            if(board[row-1][col-1] == fill){
+            if(IsValidRowCol(row, col) && board[row-1][col-1] == empty){
                 return true;
             }
 
@@ -63,7 +69,45 @@ class Board{
         }
 
         int GetWinner(){
-            return 0;//TODO
+            //diagonal checking makes sense only if the middle was marked by a
+            //player
+            if(board[1][1] != empty){
+                if(board[0][0] == board[1][1] && board[1][1] == board[2][2]
+                    && board[0][0] == board[2][2]){
+                    return board[0][0]; //first diagonal
+                }
+                else if(board[0][2] == board[1][1] && board[1][1] == board[2][0]
+                        && board[0][2] == board[2][0]){
+                    return board[0][2]; //second diagonal
+                }
+            }
+
+            for(int i=0; i<board.capacity(); i++){
+                if(board[0][i] == board[1][i] && board[1][i] == board[2][i]
+                    && board[0][i] == board[2][i] && board[0][i] != empty){
+                    return board[0][i]; //a column
+                }
+                else if(board[i][0] == board[i][1] && board[i][1] == board[i][2]
+                    && board[i][0] == board[i][2] && board[i][0] != empty){
+                    return board[i][0]; //a row
+                }
+            }
+
+            //check for draw
+            for(int i=0; i<board.capacity(); i++){
+                for(int j=0; j<board.capacity(); j++){
+                    if(board[i][j] == empty){
+                        //if the the board is not yet filled by player
+                        //markers (id's) and there is no winner then the game
+                        //should contine
+                        return empty;
+                    }
+                }
+            }
+
+            //indeed it's a draw because the board is filled by markers but
+            //there's no winner
+            return -1;
         }
 
         unsigned int GetWidth(){
@@ -74,10 +118,19 @@ class Board{
             return height;
         }
 
-    private:
-        unsigned int width, height;
         std::vector< std::vector<int> > board;
-        int fill;
+    private:
+        bool IsValidRowCol(unsigned int row, unsigned int col){
+            if(row > 0 && col > 0 &&  row <= board.capacity() &&
+                col <= board[0].capacity()){
+                return true;
+            }
+
+            return false;
+        }
+
+        unsigned int width, height;
+        int empty;
 };
 
 class Player{
