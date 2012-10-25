@@ -1,12 +1,15 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <iostream>
+#include <vector>
 
 class Board{
     public:
-        Board(unsigned int w, unsigned int h){
+        Board(unsigned int w, unsigned int h, int f=0)
+            : board(3, std::vector<int>(3, f)) {
             width = w;
             height = h;
+            fill = f;
         }
 
         /**
@@ -18,7 +21,8 @@ class Board{
          * @return std::pair<unsigned int, unsigned int> the point's row and
          * column number on the board
          */
-        std::pair<unsigned int, unsigned int> CoordToPos(unsigned int x, unsigned int y) const{
+        std::pair<unsigned int, unsigned int> CoordToPos(unsigned int x,
+                unsigned int y) const {
             int col, row;
 
             for(int i=1; i<=3; i++){
@@ -37,10 +41,25 @@ class Board{
         }
 
         void Update(int id, unsigned int row, unsigned int col){
+            //Note: the vector is 0-indexed
+            board[row-1][col-1] = id;
         }
 
+        /**
+         * Validates a possible move into a position on the board
+         *
+         * @param unsigned int row the row where a move will be made
+         * @param unsigned int col the column where the move will be made
+         *
+         * @return true if the position is valid, otherwise false
+         */
         bool IsValidMove(unsigned int row, unsigned int col){
-            return true;//TODO
+            //Note: the vector is 0-indexed
+            if(board[row-1][col-1] == fill){
+                return true;
+            }
+
+            return false;
         }
 
         int GetWinner(){
@@ -57,7 +76,8 @@ class Board{
 
     private:
         unsigned int width, height;
-        int board[3][3];
+        std::vector< std::vector<int> > board;
+        int fill;
 };
 
 class Player{
