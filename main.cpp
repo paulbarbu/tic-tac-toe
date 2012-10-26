@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <map>
 
 /**
  * Returns true with a probability of p
@@ -117,6 +118,15 @@ class Board{
             return -1;
         }
 
+        /**
+         * Reset the board to its initial state
+         */
+        void Reset(){
+            for(int i=0; i<board.capacity(); i++){
+                std::fill(board[i].begin(), board[i].end(), empty);
+            }
+        }
+
         unsigned int GetWidth(){
             return width;
         }
@@ -125,7 +135,6 @@ class Board{
             return height;
         }
 
-        std::vector< std::vector<int> > board;
     protected:
         /**
          * Check if the given position is within the board
@@ -164,6 +173,7 @@ class Board{
     private:
         unsigned int width, height;
         int empty;
+        std::vector< std::vector<int> > board;
 };
 
 class Player{
@@ -182,8 +192,7 @@ class Player{
 
 class HumanPlayer : public Player {
     public:
-        HumanPlayer(int id, const sf::Input &i, const Board &b)
-            : Player(id), board(b) {}
+        HumanPlayer(int id, const Board &b) : Player(id), board(b) {}
 
         /**
          * Get input from the user using the mouse
@@ -222,7 +231,7 @@ class Game{
     public:
         Game(unsigned int w, unsigned h, const std::string& t)
             : board(w, h), window(sf::VideoMode(w, h, 32), t, sf::Style::Close),
-            human(1, window.GetInput(), board), ai(2) {
+            human(1, board), ai(2) {
             title = t;
         }
 
@@ -232,15 +241,13 @@ class Game{
         void Loop(){
             std::pair<unsigned int, unsigned int> pos;
 
-            SetFirstPlayer();
-
-            window.Clear();
-            DrawGrid();
+            Start();
 
             while(window.IsOpened()){
                 pos = HandleInput();
 
-                if(board.Update(current_player->GetId(), pos.first, pos.second)){
+                if(board.Update(current_player->GetId(), pos.first, pos.second)
+                    && playing){
                     DrawMove(pos.first, pos.second);
 
                     if(current_player == &human){
@@ -258,6 +265,19 @@ class Game{
         }
 
     protected:
+        /**
+         * Set some default values and clear the screen
+         */
+        void Start(){
+            SetFirstPlayer();
+            playing = true;
+
+            window.Clear();
+            DrawGrid();
+
+            board.Reset();
+        }
+
         /**
          * Randomly choose the first player
          *
@@ -348,10 +368,20 @@ class Game{
             }
         }
 
+        /**
+         * Handle everything input related
+         */
         std::pair<unsigned int, unsigned int> HandleInput(){
             while(window.GetEvent(event)){
                 if(event.Type == sf::Event::Closed){
                     window.Close();
+                }
+                else if(event.Key.Code == sf::Key::F5){
+                    sf::Image screen = window.Capture();
+                    screen.SaveToFile("tic-tac-toe.jpg");
+                }
+                else if(event.Key.Code == sf::Key::R && !playing){
+                    Start();
                 }
                 else{
                     return current_player->GetInput(event);
@@ -366,20 +396,29 @@ class Game{
             return std::make_pair(0, 0);
         }
 
+        /**
+         * Verify if the game is over
+         */
         void CheckGameOver(){
+            //don't check for a winner if the game is already over
+            if(!playing){
+                return;
+            }
+
+            std::map<int, std::string> messages;
+            std::map<int, std::string>::iterator winner;
+
+            messages[-1] = "It's a draw";
+            messages[human.GetId()] = "You won!";
+            messages[ai.GetId()] = "The computer won!";
+
+
             int winner_id = board.GetWinner();
 
-            if(winner_id == human.GetId()){
-                std::cout<<"The human won!\n";
-                //window.Close();
-            }
-            else if(winner_id == ai.GetId()){
-                std::cout<<"The computer won!\n";
-                //window.Close();
-            }
-            else if (winner_id < 0){
-                std::cout<<"It's a draw!\n";
-                //window.Close();
+            winner = messages.find(winner_id);
+            if(winner != messages.end()){
+                std::cout<<winner->second<<"\nPress r to play again!\n";
+                playing = false;
             }
         }
 
@@ -391,6 +430,7 @@ class Game{
         Player *current_player;
         HumanPlayer human;
         AiPlayer ai;
+        bool playing;
 };
 
 int main(){
