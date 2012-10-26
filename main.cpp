@@ -237,9 +237,11 @@ class AiPlayer : public Player {
 class Game{
     public:
         Game(unsigned int w, unsigned h, const std::string& t)
-            : board(w, h), window(sf::VideoMode(w, h, 32), t, sf::Style::Close),
+            : status_area_height(30), board(w, h-status_area_height),
+            window(sf::VideoMode(w, h, 32), t, sf::Style::Close),
             human(1, board), ai(2) {
             title = t;
+            height = h;
         }
 
         /**
@@ -259,9 +261,11 @@ class Game{
 
                     if(current_player == &human){
                         current_player = &ai;
+                        DisplayStatus("Computer's turn!");
                     }
                     else{
                         current_player = &human;
+                        DisplayStatus("Your turn!");
                     }
                 }
 
@@ -276,10 +280,11 @@ class Game{
          * Set some default values and clear the screen
          */
         void Start(){
+            window.Clear();
+
             SetFirstPlayer();
             playing = true;
 
-            window.Clear();
             DrawGrid();
 
             board.Reset();
@@ -293,9 +298,11 @@ class Game{
         int SetFirstPlayer(){
             if(probability(50)){
                 current_player = &human;
+                DisplayStatus("Your turn!");
             }
             else{
                 current_player = &ai;
+                DisplayStatus("Computer's turn!");
             }
 
             return current_player->GetId();
@@ -415,7 +422,7 @@ class Game{
             std::map<int, std::string> messages;
             std::map<int, std::string>::iterator winner;
 
-            messages[-1] = "It's a draw";
+            messages[-1] = "It's a draw!";
             messages[human.GetId()] = "You won!";
             messages[ai.GetId()] = "The computer won!";
 
@@ -424,12 +431,26 @@ class Game{
 
             winner = messages.find(winner_id);
             if(winner != messages.end()){
-                std::cout<<winner->second<<"\nPress r to play again!\n";
+                DisplayStatus(winner->second + " Press r to play again!");
                 playing = false;
             }
         }
 
+        void DisplayStatus(std::string t){
+            sf::Shape clear = sf::Shape::Rectangle(0, 300, 300, 330, sf::Color(0, 0, 0));
+            window.Draw(clear);
+
+            sf::String text(t);
+            text.SetSize(15);
+            text.SetColor(sf::Color(255, 255, 255));
+            text.SetPosition(5, height - status_area_height);
+
+            window.Draw(text);
+        }
+
     private:
+        unsigned int height;
+        unsigned int status_area_height;
         Board board;
         std::string title;
         sf::RenderWindow window;
@@ -441,6 +462,6 @@ class Game{
 };
 
 int main(){
-    Game game(300, 300, "Tic-tac-toe");
+    Game game(300, 330, "Tic-tac-toe");
     game.Loop();
 }
