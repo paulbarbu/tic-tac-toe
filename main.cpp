@@ -8,6 +8,7 @@
  * Returns true with a probability of p
  *
  * If passed 20 for example the probability to return true is 20%
+ * Inspiration source: http://users.softlab.ntua.gr/~ttsiod/amIsick.html
  *
  * @param float p the probability
  *
@@ -76,6 +77,12 @@ class Board{
             return false;
         }
 
+        /**
+         * Check for a winner on the board
+         *
+         * @return int the marker (a player's id) that has won, if it's a draw
+         * -1 is returned or if there is no winner yet, returns 0
+         */
         int GetWinner(){
             //diagonal checking makes sense only if the middle was marked by a
             //player
