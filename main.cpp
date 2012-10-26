@@ -40,28 +40,22 @@ class Board{
             return std::pair<unsigned int, unsigned int>(row, col);
         }
 
+        /**
+         * Mark a position on the board with the player's id
+         *
+         * @param int id the marker to put on the board( the player's id)
+         * @param unsigned int row the row on the board to be marked
+         * @param unsigned int row the column on the board to be marked
+         *
+         * @return bool if the position was marked, false is returned of the
+         * give row or column is not on the board or if the given position is
+         * already marked
+         */
         bool Update(int id, unsigned int row, unsigned int col){
-            if(IsValidRowCol(row, col)){
+            if(IsValidMove(row, col)){
                 //Note: the vector is 0-indexed
                 board[row-1][col-1] = id;
 
-                return true;
-            }
-
-            return false;
-        }
-
-        /**
-         * Validates a possible move into a position on the board
-         *
-         * @param unsigned int row the row where a move will be made
-         * @param unsigned int col the column where the move will be made
-         *
-         * @return true if the position is valid, otherwise false
-         */
-        bool IsValidMove(unsigned int row, unsigned int col){
-            //Note: the vector is 0-indexed
-            if(IsValidRowCol(row, col) && board[row-1][col-1] == empty){
                 return true;
             }
 
@@ -119,7 +113,15 @@ class Board{
         }
 
         std::vector< std::vector<int> > board;
-    private:
+    protected:
+        /**
+         * Check if the given position is within the board
+         *
+         * @param unsigned int row the row number that should be checked
+         * @param unsigned int col the column number that should be checked
+         *
+         * @return bool true if the position is on the board, else false
+         */
         bool IsValidRowCol(unsigned int row, unsigned int col){
             if(row > 0 && col > 0 &&  row <= board.capacity() &&
                 col <= board[0].capacity()){
@@ -129,6 +131,24 @@ class Board{
             return false;
         }
 
+        /**
+         * Validates a possible move into a position on the board
+         *
+         * @param unsigned int row the row where a move will be made
+         * @param unsigned int col the column where the move will be made
+         *
+         * @return true if the position is valid, otherwise false
+         */
+        bool IsValidMove(unsigned int row, unsigned int col){
+            //Note: the vector is 0-indexed
+            if(IsValidRowCol(row, col) && board[row-1][col-1] == empty){
+                return true;
+            }
+
+            return false;
+        }
+
+    private:
         unsigned int width, height;
         int empty;
 };
@@ -226,16 +246,14 @@ class Game{
                     }
                 }
 
-                if(board.IsValidMove(pos.first, pos.second)){
-                    if(board.Update(current_player->GetId(), pos.first, pos.second)){
-                        DrawMove(pos.first, pos.second);
+                if(board.Update(current_player->GetId(), pos.first, pos.second)){
+                    DrawMove(pos.first, pos.second);
 
-                        if(current_player == &human){
-                            current_player = &ai;
-                        }
-                        else{
-                            current_player = &human;
-                        }
+                    if(current_player == &human){
+                        current_player = &ai;
+                    }
+                    else{
+                        current_player = &human;
                     }
                 }
 
