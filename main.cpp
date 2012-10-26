@@ -172,6 +172,14 @@ class HumanPlayer : public Player {
         HumanPlayer(int id, const sf::Input &i, const Board &b)
             : Player(id), board(b) {}
 
+        /**
+         * Get input from the user using the mouse
+         *
+         * @param sf::Event event the event that is checked for the user's click
+         *
+         * @return std::pair<unsigned int, unsigned int> a position (row, col)
+         * on the board if the user clicked, else some default position (0, 0)
+         */
         std::pair<unsigned int, unsigned int> GetInput(sf::Event event){
             if(event.Type == sf::Event::MouseButtonReleased
                 && event.MouseButton.Button == sf::Mouse::Left){
@@ -205,30 +213,62 @@ class Game{
             title = t;
         }
 
+        /**
+         * Draw a mark at the given position
+         *
+         * The position should be relative to the board, internally this position is
+         * translated to the window's coordinates, also this method figures out
+         * on its own the current player in order to draw the correct marker
+         *
+         * @param unsigned int row the row on the board to draw the marker at
+         * @param unsigned int col the column on the board to draw the marker at
+         */
         void DrawMove(unsigned int row, unsigned int col){
-            //TODO: add some randomness
             //TODO: try and combine two shapes (for the X)
+            sf::Color color;
             sf::Shape sign;
-            sign.EnableFill(false);
+
+            float thickness = sf::Randomizer::Random(4.f, 6.f);
 
             if(current_player == &human){
+                color = sf::Color(239, 39, 93);
+
                 //the O
-                sign = sf::Shape::Circle(100*col - 50, 100*row - 50, 45,
-                        sf::Color(239, 39, 93), 5.f, sf::Color(239, 39, 93));
+                float x = 100 * col - 50 + sf::Randomizer::Random(-10.f, 10.f);
+                float y = 100 * row - 50 + sf::Randomizer::Random(-10.f, 10.f);
+                float radius = 40 - thickness;
+
+                sign = sf::Shape::Circle(x, y, radius, color, thickness, color);
+                sign.EnableFill(false);
             }
             else{
-                //the X
-                sign = sf::Shape::Line(100 * (col-1), 100 * (row-1),
-                        100*col, 100*row, 5, sf::Color(39, 239, 184));
+                color = sf::Color(39, 239, 184);
+
+                //the X is in fact two lines
+                float x1 = 100 * (col-1) + sf::Randomizer::Random(3.f, 10.f);
+                float y1 = 100 * (row-1) + sf::Randomizer::Random(3.f, 10.f);
+
+                float x2 = 100 * col - sf::Randomizer::Random(3.f, 10.f);
+                float y2 = 100 * row - sf::Randomizer::Random(3.f, 10.f);
+
+                sign = sf::Shape::Line(x1, y1, x2, y2, thickness, color);
                 window.Draw(sign);
 
-                sign = sf::Shape::Line(100*col, 100 * (row-1),
-                        100 * (col-1), 100*row, 5, sf::Color(39, 239, 184));
+                x1 = 100 * col - sf::Randomizer::Random(3.f, 10.f);
+                y1 = 100 * (row-1) + sf::Randomizer::Random(3.f, 10.f);
+
+                x2 = 100 * (col-1) + sf::Randomizer::Random(3.f, 10.f);
+                y2 = 100 * row - sf::Randomizer::Random(3.f, 10.f);
+
+                sign = sf::Shape::Line(x1, y1, x2, y2, thickness, color);
             }
 
             window.Draw(sign);
         }
 
+        /**
+         * Main game loop
+         */
         void Loop(){
             std::pair<unsigned int, unsigned int> pos;
             current_player = &human;
