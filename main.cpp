@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <limits>
+#include <algorithm>
 
 /**
  * Returns true with a probability of p
@@ -187,7 +189,7 @@ class Player{
     public:
         Player(int i) : id(i) {}
 
-        virtual std::pair<unsigned int, unsigned int> GetInput(sf::Event)=0;
+        virtual std::pair<unsigned int, unsigned int> GetInput(sf::Event, Board b)=0;
 
         virtual int GetId(){
             return id;
@@ -209,7 +211,7 @@ class HumanPlayer : public Player {
          * @return std::pair<unsigned int, unsigned int> a position (row, col)
          * on the board if the user clicked, else some default position (0, 0)
          */
-        std::pair<unsigned int, unsigned int> GetInput(sf::Event event){
+        std::pair<unsigned int, unsigned int> GetInput(sf::Event event, Board b){
             if(event.Type == sf::Event::MouseButtonReleased
                 && event.MouseButton.Button == sf::Mouse::Left){
                 return board.CoordToPos(event.MouseButton.X, event.MouseButton.Y);
@@ -226,11 +228,68 @@ class AiPlayer : public Player {
     public:
         AiPlayer(int id) : Player(id) {}
 
-        std::pair<unsigned int, unsigned int> GetInput(sf::Event){
+        std::pair<unsigned int, unsigned int> GetInput(sf::Event, Board b){
             int row = sf::Randomizer::Random(1, 3);
             int col = sf::Randomizer::Random(1, 3);
+            int r;
+            std::pair<unsigned int, unsigned int> x;
+            r = Minimax(id, b, 9, x);
 
-            return std::make_pair(row, col);
+            //std::cout<<r.first<<" "<<r.second.first<<" "<<r.second.second<<"\n";
+            std::cout<<r<<" "<<x.first<<" "<<x.second<<"\n";
+
+            //return std::make_pair(row, col);
+            //return std::make_pair(r.second.first, r.second.second);
+            return x;
+        }
+
+    protected:
+        int Minimax(int player, Board b, int depth, std::pair<unsigned int, unsigned int> &x){
+            int alpha;
+            int opponent = id+1;
+
+            int winner = b.GetWinner();
+            if(depth <= 0 || winner != 0){
+                if(winner == id){
+                    return 1;
+                }
+                else if(winner == id+1){
+                    return -1;
+                }
+                else{
+                    return 0;
+                }
+            }
+
+            if(player == id){
+                alpha = -1;
+            }
+            else{
+                alpha = 1;
+            }
+
+            for(int i=1; i<=3; i++){
+                for(int j=1; j<=3; j++){
+                    if(b.Update(id == player ? id : opponent, i, j)){
+                        int score = Minimax(id == player ? opponent : id, b, depth-1, x);
+
+                        if(player == id){
+                            if(alpha < score){
+                                alpha = score;
+                                x = std::make_pair(i, j);
+                            }
+                        }
+                        else{
+                            if(alpha > score){
+                                alpha = score;
+                                x = std::make_pair(i, j);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return alpha;
         }
 };
 
@@ -319,7 +378,6 @@ class Game{
          * @param unsigned int col the column on the board to draw the marker at
          */
         void DrawMove(unsigned int row, unsigned int col){
-            //TODO: try and combine two shapes (for the X)
             sf::Color color;
             sf::Shape sign;
 
@@ -398,13 +456,13 @@ class Game{
                     Start();
                 }
                 else{
-                    return current_player->GetInput(event);
+                    return current_player->GetInput(event, board);
                 }
             }
 
             //safety net: the ai player doesn't need events to make a move
             if(current_player == &ai){
-                return current_player->GetInput(event);
+                return current_player->GetInput(event, board);
             }
 
             return std::make_pair(0, 0);
@@ -461,6 +519,8 @@ class Game{
         bool playing;
 };
 
+//TODO: cross the winner's marks
+////TODO: check the R thing at the end, sometimes it automatically resets
 int main(){
     Game game(300, 330, "Tic-tac-toe");
     game.Loop();
