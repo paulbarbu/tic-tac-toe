@@ -145,6 +145,19 @@ class Board{
         }
         std::vector< std::vector<int> > board;
 
+        std::vector< std::pair<unsigned int, unsigned int> > GetPossibleMoves(){
+            std::vector< std::pair<unsigned int, unsigned int> > x;
+            for(int i=0; i<3; i++){
+                for(int j=0; j<3; j++){
+                    if(board[i][j] == empty){
+                        x.push_back(std::make_pair(i, j));
+                    }
+                }
+            }
+
+            return x;
+        }
+
     protected:
         /**
          * Check if the given position is within the board
@@ -230,15 +243,13 @@ class AiPlayer : public Player {
 
         std::pair<unsigned int, unsigned int> GetInput(sf::Event, Board b){
             std::pair<unsigned int, unsigned int> move;
-            int score = Minimax(id, b, 9, move);
-
-            //std::cout<<score<<" "<<move.first<<" "<<move.second<<"\n";
+            Minimax(b, move, id, 9);
 
             return move;
         }
 
     protected:
-        int Minimax(int player, Board b, int depth, std::pair<unsigned int, unsigned int> &move){
+        int Minimax(Board b, std::pair<unsigned int, unsigned int> &move, int player, int depth){
             int best_score;
             int opponent = 1;
 
@@ -247,12 +258,12 @@ class AiPlayer : public Player {
                 if(winner == id){
                     return 1;
                 }
-                else if(winner == id+1){
+
+                if(winner == 1){
                     return -1;
                 }
-                else{
-                    return 0;
-                }
+
+                return 0;
             }
 
             if(player == id){
@@ -264,8 +275,9 @@ class AiPlayer : public Player {
 
             for(int i=1; i<=3; i++){
                 for(int j=1; j<=3; j++){
-                    if(b.Update(id == player ? id : opponent, i, j)){
-                        int score = Minimax(id == player ? opponent : id, b, depth-1, move);
+                    if(b.Update((id == player) ? id : opponent, i, j)){
+                        int score = Minimax(b, move, (id == player) ? opponent : id, depth - 1);
+                        b.board[i-1][j-1] = 0;
 
                         if(player == id){
                             if(best_score < score){
@@ -282,14 +294,6 @@ class AiPlayer : public Player {
                     }
                 }
             }
-
-            for(int i=0; i<3; i++){
-                for(int j=0; j<3; j++){
-                    std::cout<<b.board[i][j]<<" ";
-                }
-                std::cout<<"\n";
-            }
-            std::cout<<"=========\n";
 
             return best_score;
         }
