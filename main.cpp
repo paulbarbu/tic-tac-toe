@@ -143,6 +143,7 @@ class Board{
         unsigned int GetHeight(){
             return height;
         }
+        std::vector< std::vector<int> > board;
 
     protected:
         /**
@@ -182,7 +183,6 @@ class Board{
     private:
         unsigned int width, height;
         int empty;
-        std::vector< std::vector<int> > board;
 };
 
 class Player{
@@ -229,24 +229,18 @@ class AiPlayer : public Player {
         AiPlayer(int id) : Player(id) {}
 
         std::pair<unsigned int, unsigned int> GetInput(sf::Event, Board b){
-            int row = sf::Randomizer::Random(1, 3);
-            int col = sf::Randomizer::Random(1, 3);
-            int r;
-            std::pair<unsigned int, unsigned int> x;
-            r = Minimax(id, b, 9, x);
+            std::pair<unsigned int, unsigned int> move;
+            int score = Minimax(id, b, 9, move);
 
-            //std::cout<<r.first<<" "<<r.second.first<<" "<<r.second.second<<"\n";
-            std::cout<<r<<" "<<x.first<<" "<<x.second<<"\n";
+            //std::cout<<score<<" "<<move.first<<" "<<move.second<<"\n";
 
-            //return std::make_pair(row, col);
-            //return std::make_pair(r.second.first, r.second.second);
-            return x;
+            return move;
         }
 
     protected:
-        int Minimax(int player, Board b, int depth, std::pair<unsigned int, unsigned int> &x){
-            int alpha;
-            int opponent = id+1;
+        int Minimax(int player, Board b, int depth, std::pair<unsigned int, unsigned int> &move){
+            int best_score;
+            int opponent = 1;
 
             int winner = b.GetWinner();
             if(depth <= 0 || winner != 0){
@@ -262,34 +256,42 @@ class AiPlayer : public Player {
             }
 
             if(player == id){
-                alpha = -1;
+                best_score = -1;
             }
             else{
-                alpha = 1;
+                best_score = 1;
             }
 
             for(int i=1; i<=3; i++){
                 for(int j=1; j<=3; j++){
                     if(b.Update(id == player ? id : opponent, i, j)){
-                        int score = Minimax(id == player ? opponent : id, b, depth-1, x);
+                        int score = Minimax(id == player ? opponent : id, b, depth-1, move);
 
                         if(player == id){
-                            if(alpha < score){
-                                alpha = score;
-                                x = std::make_pair(i, j);
+                            if(best_score < score){
+                                best_score = score;
+                                move = std::make_pair(i, j);
                             }
                         }
                         else{
-                            if(alpha > score){
-                                alpha = score;
-                                x = std::make_pair(i, j);
+                            if(best_score > score){
+                                best_score = score;
+                                move = std::make_pair(i, j);
                             }
                         }
                     }
                 }
             }
 
-            return alpha;
+            for(int i=0; i<3; i++){
+                for(int j=0; j<3; j++){
+                    std::cout<<b.board[i][j]<<" ";
+                }
+                std::cout<<"\n";
+            }
+            std::cout<<"=========\n";
+
+            return best_score;
         }
 };
 
