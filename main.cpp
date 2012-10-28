@@ -455,16 +455,19 @@ class Game{
             sf::Shape sign;
 
             float thickness = sf::Randomizer::Random(4.f, 6.f);
+            float scale_x = sf::Randomizer::Random(0.95f, 1.05f);
+            float scale_y = sf::Randomizer::Random(0.95f, 1.05f);
 
             if(current_player == &human){
                 color = sf::Color(239, 39, 93);
 
                 //the O
-                float x = 100 * col - 50 + sf::Randomizer::Random(-10.f, 10.f);
-                float y = 100 * row - 50 + sf::Randomizer::Random(-10.f, 10.f);
+                float x = 100 * col - 50 + sf::Randomizer::Random(-5.f, 5.f);
+                float y = 100 * row - 50 + sf::Randomizer::Random(-5.f, 5.f);
                 float radius = 40 - thickness;
 
                 sign = sf::Shape::Circle(x, y, radius, color, thickness, color);
+                sign.SetScale(scale_x, scale_y);
                 sign.EnableFill(false);
             }
             else{
