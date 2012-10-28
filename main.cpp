@@ -243,59 +243,91 @@ class AiPlayer : public Player {
 
         std::pair<unsigned int, unsigned int> GetInput(sf::Event, Board b){
             std::pair<unsigned int, unsigned int> move;
-            Minimax(b, move, id, 9);
+            move = Minimax(b);
 
             return move;
         }
 
     protected:
-        int Minimax(Board b, std::pair<unsigned int, unsigned int> &move, int player, int depth){
-            int best_score;
-            int opponent = 1;
-
+        int GetScore(Board b){
             int winner = b.GetWinner();
-            if(depth <= 0 || winner != 0){
-                if(winner == id){
-                    return 1;
-                }
-
-                if(winner == 1){
-                    return -1;
-                }
-
+            if(winner == id){
+                return 1;
+            }
+            else if(winner == 1){
+                return -1;
+            }
+            else if(winner == -1){
                 return 0;
             }
+        }
+        std::pair<int, std::pair<unsigned int, unsigned int> > Max(Board b){
+            int best_score = -1;
+            std::pair<unsigned int, unsigned int> best_move = std::make_pair(-1, -1);
 
-            if(player == id){
-                best_score = -1;
-            }
-            else{
-                best_score = 1;
-            }
+            std::pair<int, std::pair<unsigned int, unsigned int> > retval;
 
+            //std::vector< std::pair<unsigned int, unsigned int> > pos = b.GetPossibleMoves();
+            //std::vector< std::pair<unsigned int, unsigned int> >::iterator it;
+            //for(it = pos.begin(); it != pos.end(); it++){
             for(int i=1; i<=3; i++){
                 for(int j=1; j<=3; j++){
-                    if(b.Update((id == player) ? id : opponent, i, j)){
-                        int score = Minimax(b, move, (id == player) ? opponent : id, depth - 1);
-                        b.board[i-1][j-1] = 0;
+                    if(b.Update(id, i, j)){
 
-                        if(player == id){
-                            if(best_score < score){
-                                best_score = score;
-                                move = std::make_pair(i, j);
-                            }
+                        if(b.GetWinner() != 0){
+                            retval.first = GetScore(b);
                         }
                         else{
-                            if(best_score > score){
-                                best_score = score;
-                                move = std::make_pair(i, j);
-                            }
+                            retval = Min(b);
+                        }
+
+                        b.board[i-1][j-1] = 0;
+
+                        if(retval.first > best_score){
+                            best_score = retval.first;
+                            best_move = std::make_pair(i, j);
                         }
                     }
                 }
             }
 
-            return best_score;
+            return std::make_pair(best_score, best_move);
+        }
+
+        std::pair<int, std::pair<unsigned int, unsigned int> > Min(Board b){
+            int best_score = 1;
+            std::pair<unsigned int, unsigned int> best_move = std::make_pair(-1, -1);
+
+            std::pair<int, std::pair<unsigned int, unsigned int> > retval;
+
+            //std::vector< std::pair<unsigned int, unsigned int> > pos = b.GetPossibleMoves();
+            //std::vector< std::pair<unsigned int, unsigned int> >::iterator it;
+            //for(it = pos.begin(); it != pos.end(); it++){
+            for(int i=1; i<=3; i++){
+                for(int j=1; j<=3; j++){
+                    if(b.Update(1, i, j)){
+                        if(b.GetWinner() != 0){
+                            retval.first = GetScore(b);
+                        }
+                        else{
+                            retval = Max(b);
+                        }
+
+                        b.board[i-1][j-1] = 0;
+
+                        if(retval.first < best_score){
+                            best_score = retval.first;
+                            best_move = std::make_pair(i, j);
+                        }
+                    }
+                }
+            }
+
+            return std::make_pair(best_score, best_move);
+        }
+
+        std::pair<unsigned int, unsigned int> Minimax(Board b){
+            return Max(b).second;
         }
 };
 
