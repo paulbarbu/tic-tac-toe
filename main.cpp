@@ -281,6 +281,8 @@ class AiPlayer : public Player {
 
             std::vector< std::pair<unsigned int, unsigned int> > moves = b.GetPossibleMoves();
             std::vector< std::pair<unsigned int, unsigned int> >::iterator it;
+
+            // iterate through the child nodes
             for(it = moves.begin(); it != moves.end(); it++){
                 b.Update(id, it->first, it->second);
                 int winner = b.GetWinner();
@@ -288,19 +290,23 @@ class AiPlayer : public Player {
                 if(winner != 0){ //the gamne is over
                     score = GetScore(winner);
                 }
-                else{
+                else{ // the game continues and it's the minimizing player's turn
                     score = Min(b).first;
                 }
 
                 // undo the move so we get the same board that was passed as argument
                 b.Reset(it->first, it->second);
 
+                // if the score from the current visited children is better, we
+                // update both the score and the move to get to the first child
                 if(score > best_score){
                     best_score = score;
                     best_move = std::make_pair(it->first, it->second);
                 }
             }
 
+            // after visiting all children return the best score and the move
+            // that made the score possible
             return std::make_pair(best_score, best_move);
         }
 
@@ -311,6 +317,8 @@ class AiPlayer : public Player {
 
             std::vector< std::pair<unsigned int, unsigned int> > moves = b.GetPossibleMoves();
             std::vector< std::pair<unsigned int, unsigned int> >::iterator it;
+
+            // iterate through the child nodes
             for(it = moves.begin(); it != moves.end(); it++){
                 b.Update(opponent_id, it->first, it->second);
                 int winner = b.GetWinner();
@@ -318,19 +326,23 @@ class AiPlayer : public Player {
                 if(winner != 0){ //the game is over
                     score = GetScore(winner);
                 }
-                else{
+                else{ // the game continues and it's the maximizing player's turn
                     score = Max(b).first;
                 }
 
                 // undo the move so we get the same board that was passed as argument
                 b.Reset(it->first, it->second);
 
+                // if the score from the current visited children is better, we
+                // update both the score and the move to get to the first child
                 if(score < best_score){
                     best_score = score;
                     best_move = std::make_pair(it->first, it->second);
                 }
             }
 
+            // after visiting all children return the best score and the move
+            // that made the score possible
             return std::make_pair(best_score, best_move);
         }
 
@@ -581,8 +593,6 @@ class Game{
         bool playing;
 };
 
-//TODO: cross the winner's marks
-////TODO: check the R thing at the end, sometimes it automatically resets
 int main(){
     Game game(300, 330, "Tic-tac-toe");
     game.Loop();
