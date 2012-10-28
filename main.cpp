@@ -359,7 +359,7 @@ class Game{
         Game(unsigned int w, unsigned h, const std::string& t)
             : status_area_height(30), board(w, h-status_area_height),
             window(sf::VideoMode(w, h, 32), t, sf::Style::Close),
-            human(1), ai(2, 1) {
+            input(window.GetInput()), human(1), ai(2, 1) {
             title = t;
             height = h;
         }
@@ -518,6 +518,10 @@ class Game{
          * Handle everything input related
          */
         std::pair<unsigned int, unsigned int> HandleInput(){
+            if(!playing && input.IsKeyDown(sf::Key::R)){
+                Start();
+            }
+
             while(window.GetEvent(event)){
                 if(event.Type == sf::Event::Closed){
                     window.Close();
@@ -525,9 +529,6 @@ class Game{
                 else if(event.Key.Code == sf::Key::F5){
                     sf::Image screen = window.Capture();
                     screen.SaveToFile("tic-tac-toe.jpg");
-                }
-                else if(event.Key.Code == sf::Key::R && !playing){
-                    Start();
                 }
                 else{
                     return current_player->GetInput(event, board);
@@ -586,6 +587,7 @@ class Game{
         Board board;
         std::string title;
         sf::RenderWindow window;
+        const sf::Input &input;
         sf::Event event;
         Player *current_player;
         HumanPlayer human;
