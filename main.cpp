@@ -150,7 +150,7 @@ class Board{
             for(int i=0; i<3; i++){
                 for(int j=0; j<3; j++){
                     if(board[i][j] == empty){
-                        x.push_back(std::make_pair(i, j));
+                        x.push_back(std::make_pair(i+1, j+1));
                     }
                 }
             }
@@ -214,7 +214,7 @@ class Player{
 
 class HumanPlayer : public Player {
     public:
-        HumanPlayer(int id, const Board &b) : Player(id), board(b) {}
+        HumanPlayer(int id) : Player(id) {}
 
         /**
          * Get input from the user using the mouse
@@ -227,67 +227,61 @@ class HumanPlayer : public Player {
         std::pair<unsigned int, unsigned int> GetInput(sf::Event event, Board b){
             if(event.Type == sf::Event::MouseButtonReleased
                 && event.MouseButton.Button == sf::Mouse::Left){
-                return board.CoordToPos(event.MouseButton.X, event.MouseButton.Y);
+                return b.CoordToPos(event.MouseButton.X, event.MouseButton.Y);
             }
 
             return std::make_pair(0, 0);
         }
-
-    private:
-        const Board &board;
 };
 
 class AiPlayer : public Player {
     public:
-        AiPlayer(int id) : Player(id) {}
+        AiPlayer(int id, int o_id) : Player(id), opponent_id(o_id) {}
 
         std::pair<unsigned int, unsigned int> GetInput(sf::Event, Board b){
-            std::pair<unsigned int, unsigned int> move;
-            move = Minimax(b);
-
-            return move;
+            return Minimax(b);
         }
 
     protected:
-        int GetScore(Board b){
-            int winner = b.GetWinner();
+        int GetScore(int winner){
             if(winner == id){
-                return 1;
+                // the maximizing (AiPlayer) player won
+                return  1;
             }
-            else if(winner == 1){
+
+            if(winner == opponent_id){
+                // the minimizing (the opponent) player won
                 return -1;
             }
-            else if(winner == -1){
-                return 0;
-            }
+
+            // it's a draw
+            return 0;
         }
+
         std::pair<int, std::pair<unsigned int, unsigned int> > Max(Board b){
             int best_score = -1;
-            std::pair<unsigned int, unsigned int> best_move = std::make_pair(-1, -1);
+            int score;
+            std::pair<unsigned int, unsigned int> best_move;
 
-            std::pair<int, std::pair<unsigned int, unsigned int> > retval;
+            std::vector< std::pair<unsigned int, unsigned int> > moves = b.GetPossibleMoves();
+            std::vector< std::pair<unsigned int, unsigned int> >::iterator it;
+            for(it = moves.begin(); it != moves.end(); it++){
+                b.Update(id, it->first, it->second);
+                int winner = b.GetWinner();
 
-            //std::vector< std::pair<unsigned int, unsigned int> > pos = b.GetPossibleMoves();
-            //std::vector< std::pair<unsigned int, unsigned int> >::iterator it;
-            //for(it = pos.begin(); it != pos.end(); it++){
-            for(int i=1; i<=3; i++){
-                for(int j=1; j<=3; j++){
-                    if(b.Update(id, i, j)){
+                if(winner != 0){ //the gamne is over
+                    score = GetScore(winner);
+                }
+                else{
+                    score = Min(b).first;
+                }
 
-                        if(b.GetWinner() != 0){
-                            retval.first = GetScore(b);
-                        }
-                        else{
-                            retval = Min(b);
-                        }
+                //TODO: undo function
+                b.board[it->first-1][it->second-1] = 0; // undo the move so we get the same board that was passed as argument
 
-                        b.board[i-1][j-1] = 0;
-
-                        if(retval.first > best_score){
-                            best_score = retval.first;
-                            best_move = std::make_pair(i, j);
-                        }
-                    }
+                if(score > best_score){
+                    best_score = score;
+                    best_move = std::make_pair(it->first, it->second);
                 }
             }
 
@@ -296,30 +290,27 @@ class AiPlayer : public Player {
 
         std::pair<int, std::pair<unsigned int, unsigned int> > Min(Board b){
             int best_score = 1;
-            std::pair<unsigned int, unsigned int> best_move = std::make_pair(-1, -1);
+            int score;
+            std::pair<unsigned int, unsigned int> best_move;
 
-            std::pair<int, std::pair<unsigned int, unsigned int> > retval;
+            std::vector< std::pair<unsigned int, unsigned int> > moves = b.GetPossibleMoves();
+            std::vector< std::pair<unsigned int, unsigned int> >::iterator it;
+            for(it = moves.begin(); it != moves.end(); it++){
+                b.Update(opponent_id, it->first, it->second);
+                int winner = b.GetWinner();
 
-            //std::vector< std::pair<unsigned int, unsigned int> > pos = b.GetPossibleMoves();
-            //std::vector< std::pair<unsigned int, unsigned int> >::iterator it;
-            //for(it = pos.begin(); it != pos.end(); it++){
-            for(int i=1; i<=3; i++){
-                for(int j=1; j<=3; j++){
-                    if(b.Update(1, i, j)){
-                        if(b.GetWinner() != 0){
-                            retval.first = GetScore(b);
-                        }
-                        else{
-                            retval = Max(b);
-                        }
+                if(winner != 0){ //the game is over
+                    score = GetScore(winner);
+                }
+                else{
+                    score = Max(b).first;
+                }
 
-                        b.board[i-1][j-1] = 0;
+                b.board[it->first-1][it->second-1] = 0; // undo the move so we get the same board that was passed as argument
 
-                        if(retval.first < best_score){
-                            best_score = retval.first;
-                            best_move = std::make_pair(i, j);
-                        }
-                    }
+                if(score < best_score){
+                    best_score = score;
+                    best_move = std::make_pair(it->first, it->second);
                 }
             }
 
@@ -329,6 +320,9 @@ class AiPlayer : public Player {
         std::pair<unsigned int, unsigned int> Minimax(Board b){
             return Max(b).second;
         }
+
+    private:
+        int opponent_id;
 };
 
 class Game{
@@ -336,7 +330,7 @@ class Game{
         Game(unsigned int w, unsigned h, const std::string& t)
             : status_area_height(30), board(w, h-status_area_height),
             window(sf::VideoMode(w, h, 32), t, sf::Style::Close),
-            human(1, board), ai(2) {
+            human(1), ai(2, 1) {
             title = t;
             height = h;
         }
