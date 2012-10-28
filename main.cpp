@@ -389,9 +389,9 @@ class Game{
                     DisplayCurrentPlayer();
                 }
 
-                window.Display();
-
                 CheckGameOver();
+
+                window.Display();
             }
         }
 
@@ -419,6 +419,7 @@ class Game{
             playing = true;
 
             DrawGrid();
+            DisplayCurrentPlayer();
 
             window.Display();
         }
@@ -431,11 +432,9 @@ class Game{
         int SetFirstPlayer(){
             if(probability(50)){
                 current_player = &human;
-                DisplayStatus("Your turn!");
             }
             else{
                 current_player = &ai;
-                DisplayStatus("Computer's turn!");
             }
 
             return current_player->GetId();
