@@ -1,3 +1,9 @@
+Tic-tac-toe
+===========
+
+A tic-tac-toe game written in C++ using SFML for the graphics.
+The computer player is implemented using the minimax algorithm.
+
 License
 =======
 
