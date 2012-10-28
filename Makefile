@@ -5,8 +5,9 @@ DEBUG_FLAGS = -g
 
 SFML_LIBS = -lsfml-system -lsfml-window -lsfml-graphics -lsfml-audio
 
+
 all:
-	$(CXX) $(CXX_FLAGS) -o tic-tac-toe.exe main.cpp $(SFML_LIBS)
+	$(CXX) $(CXX_FLAGS) -O3 -o tic-tac-toe.exe main.cpp $(SFML_LIBS)
 
 debug:
-	$(CXX) $(CXX_FLAGS) $(DEBUG_FLAGS) -o tic-tac-toe.exe $@.cpp $(SFML_LIBS)
+	$(CXX) $(CXX_FLAGS) $(DEBUG_FLAGS) -o tic-tac-toe.exe main.cpp $(SFML_LIBS)
