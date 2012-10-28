@@ -1,10 +1,8 @@
-#include <SFML/Graphics.hpp>
 #include <string>
-#include <iostream>
 #include <vector>
 #include <map>
-#include <limits>
-#include <algorithm>
+
+#include <SFML/Graphics.hpp>
 
 /**
  * Returns true with a probability of p
@@ -128,12 +126,30 @@ class Board{
         }
 
         /**
-         * Reset the board to its initial state
+         * Reset the whole board to its initial state
          */
         void Reset(){
             for(int i=0; i<board.capacity(); i++){
                 std::fill(board[i].begin(), board[i].end(), empty);
             }
+        }
+
+        /**
+         * Reset a position on the board to it's initial state
+         *
+         * @param unsigned int row the row of the position
+         * @param unsigned int col the column of the position
+         *
+         * @return true iof the reset was successful, else false
+         */
+        bool Reset(unsigned int row, unsigned int col){
+            if(IsValidRowCol(row, col)){
+                //Note: the vector is 0-indexed
+                board[row-1][col-1] = empty;
+                return true;
+            }
+
+            return false;
         }
 
         unsigned int GetWidth(){
@@ -143,7 +159,6 @@ class Board{
         unsigned int GetHeight(){
             return height;
         }
-        std::vector< std::vector<int> > board;
 
         std::vector< std::pair<unsigned int, unsigned int> > GetPossibleMoves(){
             std::vector< std::pair<unsigned int, unsigned int> > x;
@@ -196,6 +211,7 @@ class Board{
     private:
         unsigned int width, height;
         int empty;
+        std::vector< std::vector<int> > board;
 };
 
 class Player{
@@ -276,8 +292,8 @@ class AiPlayer : public Player {
                     score = Min(b).first;
                 }
 
-                //TODO: undo function
-                b.board[it->first-1][it->second-1] = 0; // undo the move so we get the same board that was passed as argument
+                // undo the move so we get the same board that was passed as argument
+                b.Reset(it->first, it->second);
 
                 if(score > best_score){
                     best_score = score;
@@ -306,7 +322,8 @@ class AiPlayer : public Player {
                     score = Max(b).first;
                 }
 
-                b.board[it->first-1][it->second-1] = 0; // undo the move so we get the same board that was passed as argument
+                // undo the move so we get the same board that was passed as argument
+                b.Reset(it->first, it->second);
 
                 if(score < best_score){
                     best_score = score;
@@ -352,12 +369,12 @@ class Game{
 
                     if(current_player == &human){
                         current_player = &ai;
-                        DisplayStatus("Computer's turn!");
                     }
                     else{
                         current_player = &human;
-                        DisplayStatus("Your turn!");
                     }
+
+                    DisplayCurrentPlayer();
                 }
 
                 window.Display();
@@ -367,10 +384,23 @@ class Game{
         }
 
     protected:
+        void DisplayCurrentPlayer(){
+            std::string text;
+            if(current_player == &human){
+                text = "Your turn!";
+            }
+            else{
+                text = "Computer's turn!";
+            }
+
+            DisplayStatus(text);
+        }
         /**
          * Set some default values and clear the screen
          */
         void Start(){
+            board.Reset();
+
             window.Clear();
 
             SetFirstPlayer();
@@ -378,7 +408,7 @@ class Game{
 
             DrawGrid();
 
-            board.Reset();
+            window.Display();
         }
 
         /**
